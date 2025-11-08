@@ -84,7 +84,6 @@ from sglang.srt.layers.quantization import CompressedTensorsConfig
 from sglang.srt.layers.quantization.base_config import QuantizationConfig
 from sglang.srt.layers.quantization.compressed_tensors.compressed_tensors_moe import (
     CompressedTensorsWNA16AMXEPMoEMethod,
-    CompressedTensorsWNA16MoEMethod,
 )
 from sglang.srt.layers.quantization.fp8 import Fp8Config
 from sglang.srt.layers.quantization.fp8_kernel import (
@@ -774,14 +773,8 @@ class DeepseekV2MoE(nn.Module):
             router_logits = self.gate(hidden_states, gemm_output_zero_allocator)
             topk_output = self.topk(hidden_states, router_logits)
             final_hidden_states = self.experts(hidden_states, topk_output)
-            if (
-                not _is_cuda
-                or isinstance(
-                    self.experts.quant_method, CompressedTensorsWNA16AMXEPMoEMethod
-                )
-                or isinstance(
-                    self.experts.quant_method, CompressedTensorsWNA16MoEMethod
-                )
+            if not _is_cuda or isinstance(
+                self.experts.quant_method, CompressedTensorsWNA16AMXEPMoEMethod
             ):
                 final_hidden_states *= self.routed_scaling_factor
 
@@ -847,7 +840,6 @@ class DeepseekV2MoE(nn.Module):
             or isinstance(
                 self.experts.quant_method, CompressedTensorsWNA16AMXEPMoEMethod
             )
-            or isinstance(self.experts.quant_method, CompressedTensorsWNA16MoEMethod)
         ):
             # fused in biased_grouped_topk so we can skip here
             final_hidden_states *= self.routed_scaling_factor

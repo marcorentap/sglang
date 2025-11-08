@@ -689,6 +689,7 @@ class CompressedTensorsWNA16MoEMethod(CompressedTensorsMoEMethod):
             sort_indices2=layer.w2_g_idx_sort_indices,
             num_bits=self.num_bits,
             is_k_full=self.is_k_full,
+            routed_scaling_factor=self.moe_runner_config.routed_scaling_factor,
         )
         return StandardCombineInput(hidden_states=output)
 
