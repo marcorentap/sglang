@@ -725,6 +725,10 @@ class Scheduler(
     @DynamicGradMode()
     def event_loop_normal(self):
         """A normal scheduler loop."""
+        ppeek_waiting = []
+        ppeek_prev_waiting = []
+        ppeek_running = []
+        ppeek_prev_running = []
         while True:
             recv_reqs = self.recv_requests()
             self.process_input_requests(recv_reqs)
@@ -732,7 +736,20 @@ class Scheduler(
             batch = self.get_next_batch_to_run()
             self.cur_batch = batch
 
+
             if batch:
+                ppeek_prev_waiting = ppeek_waiting
+                ppeek_prev_running = ppeek_running
+                ppeek_waiting = [req.rid for req in self.waiting_queue]
+                ppeek_running = [req.rid for req in self.running_batch.reqs]
+
+                if set(ppeek_waiting) != set(ppeek_prev_waiting) or set(ppeek_running) != set(ppeek_prev_running):
+                    print(f"PromptPeek - Running Batch: {ppeek_running}", flush=True)
+                    print(f"PromptPeek - Waiting Queue: {ppeek_waiting}", flush=True)
+                    print(f"PromptPeek - Waiting Matches:", flush=True)
+                    for req in self.waiting_queue:
+                        print(f"{req.rid}:{req.prefix_indices}")
+                    print()
                 result = self.run_batch(batch)
                 self.process_batch_result(batch, result)
             else:
@@ -2418,6 +2435,7 @@ def run_scheduler_process(
                 scheduler.event_loop_overlap()
             else:
                 scheduler.event_loop_normal()
+                print("Event loop stopped...")
         elif disaggregation_mode == DisaggregationMode.PREFILL:
             if scheduler.enable_overlap:
                 scheduler.event_loop_overlap_disagg_prefill()
