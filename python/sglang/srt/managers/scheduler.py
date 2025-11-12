@@ -725,10 +725,6 @@ class Scheduler(
     @DynamicGradMode()
     def event_loop_normal(self):
         """A normal scheduler loop."""
-        ppeek_waiting = []
-        ppeek_prev_waiting = []
-        ppeek_running = []
-        ppeek_prev_running = []
         while True:
             recv_reqs = self.recv_requests()
             self.process_input_requests(recv_reqs)
@@ -738,20 +734,9 @@ class Scheduler(
 
 
             if batch:
-                ppeek_prev_waiting = ppeek_waiting
-                ppeek_prev_running = ppeek_running
-                ppeek_waiting = [req.rid for req in self.waiting_queue]
-                ppeek_running = [req.rid for req in self.running_batch.reqs]
-
-                if set(ppeek_waiting) != set(ppeek_prev_waiting) or set(ppeek_running) != set(ppeek_prev_running):
-                    print(f"PromptPeek - Running Batch: {ppeek_running}", flush=True)
-                    print(f"PromptPeek - Waiting Queue: {ppeek_waiting}", flush=True)
-                    print(f"PromptPeek - Waiting Matches:", flush=True)
-                    for req in self.waiting_queue:
-                        print(f"{req.rid}:{req.prefix_indices}")
-                    print()
                 result = self.run_batch(batch)
                 self.process_batch_result(batch, result)
+
             else:
                 # When the server is idle, do self-check and re-init some states
                 self.self_check_during_idle()
@@ -1495,6 +1480,11 @@ class Scheduler(
 
         # Get priority queue
         self.policy.calc_priority(self.waiting_queue)
+        print(f"PromptPeek - Waiting Queue: {[req.rid for req in self.waiting_queue]}", flush=True)
+        print(f"PromptPeek - Waiting Matches:", flush=True)
+        for req in self.waiting_queue:
+            print(f"{req.rid}:{req.prefix_indices.tolist()}", flush=True)
+        print(flush=True)
 
         # Prefill policy
         adder = PrefillAdder(
