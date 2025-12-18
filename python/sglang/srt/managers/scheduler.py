@@ -443,9 +443,9 @@ class Scheduler(
             self.tree_cache,
             self.enable_hierarchical_cache,
         )
-        assert (
-            server_args.schedule_conservativeness >= 0
-        ), "Invalid schedule_conservativeness"
+        assert server_args.schedule_conservativeness >= 0, (
+            "Invalid schedule_conservativeness"
+        )
         self.init_new_token_ratio = min(
             global_config.default_init_new_token_ratio
             * server_args.schedule_conservativeness,
@@ -594,9 +594,9 @@ class Scheduler(
                     self.tree_cache.cache_controller.layer_done_counter
                 )
             elif self.is_hybrid:
-                assert (
-                    self.server_args.disaggregation_mode == "null"
-                ), "Hybrid mode does not support disaggregation yet"
+                assert self.server_args.disaggregation_mode == "null", (
+                    "Hybrid mode does not support disaggregation yet"
+                )
                 self.tree_cache = SWARadixCache(
                     req_to_token_pool=self.req_to_token_pool,
                     token_to_kv_pool_allocator=self.token_to_kv_pool_allocator,
@@ -731,7 +731,6 @@ class Scheduler(
 
             batch = self.get_next_batch_to_run()
             self.cur_batch = batch
-
 
             if batch:
                 result = self.run_batch(batch)
@@ -1305,7 +1304,7 @@ class Scheduler(
             token_msg = f"{self.max_total_num_tokens=}, {available_size=}, {evictable_size=}, {protected_size=}\n"
 
         if memory_leak:
-            msg = "token_to_kv_pool_allocator memory leak detected! " f"{token_msg}"
+            msg = f"token_to_kv_pool_allocator memory leak detected! {token_msg}"
             raise ValueError(msg)
 
         if self.disaggregation_mode == DisaggregationMode.DECODE:
@@ -1480,10 +1479,19 @@ class Scheduler(
 
         # Get priority queue
         self.policy.calc_priority(self.waiting_queue)
-        print(f"PromptPeek - Waiting Queue: {[req.rid for req in self.waiting_queue]}", flush=True)
+        print(
+            f"PromptPeek - Waiting Queue: {[req.rid for req in self.waiting_queue]}",
+            flush=True,
+        )
         print(f"PromptPeek - Waiting Matches:", flush=True)
         for req in self.waiting_queue:
-            print(f"{req.rid}:{req.prefix_indices.tolist()}", flush=True)
+            len_matches = len(req.prefix_indices.tolist())
+            print(
+                # f"{req.rid} ({len_matches} toks): {req.prefix_indices.tolist()}",
+                f"{req.rid} ({len_matches} toks)",
+                flush=True,
+            )
+        # print(self.tree_cache.pretty_print())
         print(flush=True)
 
         # Prefill policy
@@ -2007,11 +2015,9 @@ class Scheduler(
                 )
             else:
                 _, _, available_size, evictable_size = self._get_token_info()
-                info_msg = f"{available_size=}, " f"{evictable_size=}, "
+                info_msg = f"{available_size=}, {evictable_size=}, "
             logger.error(
-                f"{self.cur_batch.batch_size()=}, "
-                f"{self.cur_batch.reqs=}, "
-                f"{info_msg}"
+                f"{self.cur_batch.batch_size()=}, {self.cur_batch.reqs=}, {info_msg}"
             )
 
         pyspy_dump_schedulers()

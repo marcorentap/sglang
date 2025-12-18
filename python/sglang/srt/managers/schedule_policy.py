@@ -101,6 +101,8 @@ class SchedulePolicy:
             return False
 
         policy = self._determine_active_policy(waiting_queue)
+        # Promptpeeke
+        print(f"Active policy is {policy}")
 
         prefix_computed = False
         if isinstance(policy, CacheAwarePolicy):
